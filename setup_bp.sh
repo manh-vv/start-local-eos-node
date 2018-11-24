@@ -1,4 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+# load utils
+source ./utils.sh
+
 echo "===== create account ====="
 if [ -z "$CONTRACT_DIR" ]; then
   echo "set variable CONTRACT_DIR if you want to deploy your default system contract"
@@ -7,112 +11,61 @@ if [ -z "$CONTRACT_DIR" ]; then
   CONTRACT_DIR="./contracts"
   echo "default contracts are located at [$CONTRACT_DIR]"
 fi
+echo
 
-function ec() {
-  cleos -u http://127.0.0.1:8880 --wallet-url http://127.0.0.1:8889 "$@"
+ec_genesis get info
+echo
+echo
+
+function create_system_account {
+  SYSTEM_ACCOUNT_NAME=$1
+  ec_genesis create account eosio $SYSTEM_ACCOUNT_NAME \
+    EOS84BLRbGbFahNJEpnnJHYCoW9QPbQEk2iHsHGGS6qcVUq9HhutG 3>&1 1>/dev/null 2>&1
 }
 
-ec get info
+create_system_account eosio.bpay
+create_system_account eosio.msig
+create_system_account eosio.names
+create_system_account eosio.ram
+create_system_account eosio.ramfee
+create_system_account eosio.saving
+create_system_account eosio.stake
+create_system_account eosio.token
+create_system_account eosio.vpay
 
-sleep 1
+ec_genesis set contract eosio.token $CONTRACT_DIR/eosio.token
+ec_genesis set contract eosio.msig $CONTRACT_DIR/eosio.msig
 
-ec create account eosio eosio.bpay EOS84BLRbGbFahNJEpnnJHYCoW9QPbQEk2iHsHGGS6qcVUq9HhutG
-ec create account eosio eosio.msig EOS84BLRbGbFahNJEpnnJHYCoW9QPbQEk2iHsHGGS6qcVUq9HhutG
-ec create account eosio eosio.names EOS84BLRbGbFahNJEpnnJHYCoW9QPbQEk2iHsHGGS6qcVUq9HhutG
-ec create account eosio eosio.ram EOS84BLRbGbFahNJEpnnJHYCoW9QPbQEk2iHsHGGS6qcVUq9HhutG
-ec create account eosio eosio.ramfee EOS84BLRbGbFahNJEpnnJHYCoW9QPbQEk2iHsHGGS6qcVUq9HhutG
-ec create account eosio eosio.saving EOS84BLRbGbFahNJEpnnJHYCoW9QPbQEk2iHsHGGS6qcVUq9HhutG
-ec create account eosio eosio.stake EOS84BLRbGbFahNJEpnnJHYCoW9QPbQEk2iHsHGGS6qcVUq9HhutG
-ec create account eosio eosio.token EOS84BLRbGbFahNJEpnnJHYCoW9QPbQEk2iHsHGGS6qcVUq9HhutG
-ec create account eosio eosio.vpay EOS84BLRbGbFahNJEpnnJHYCoW9QPbQEk2iHsHGGS6qcVUq9HhutG
+ec_genesis push action eosio.token create '[ "eosio", "10000000000.0000 SYS" ]' -p eosio.token@active
+ec_genesis push action eosio.token issue '[ "eosio", "1000000000.0000 SYS", "memo" ]' -p eosio@active
 
-ec set contract eosio.token $CONTRACT_DIR/eosio.token
-sleep 1
+ec_genesis set contract eosio $CONTRACT_DIR/eosio.system
 
-ec set contract eosio.msig $CONTRACT_DIR/eosio.msig
-sleep 1
+ec_genesis push action eosio setpriv '["eosio.msig", 1]' -p eosio@active
 
-ec push action eosio.token create '[ "eosio", "10000000000.0000 SYS" ]' -p eosio.token@active
-ec push action eosio.token issue '[ "eosio", "1000000000.0000 SYS", "memo" ]' -p eosio@active
+echo "create sample accounts"
+eosio_create_account accountnum11 100000 100000
+eosio_create_account accountnum12 200000 200000
+eosio_create_account accountnum13 300000 300000
+eosio_create_account accountnum14 400000 400000
+eosio_create_account accountnum15 500000 500000
 
-ec set contract eosio $CONTRACT_DIR/eosio.system
+eosio_create_account accountnum21 600000 600000
+eosio_create_account accountnum22 700000 700000
+eosio_create_account accountnum23 800000 800000
+eosio_create_account accountnum24 900000 900000
+eosio_create_account accountnum25 900500 900500
 
-ec push action eosio setpriv '["eosio.msig", 1]' -p eosio@active
+eosio_create_account accountnum31 10000 10000 4096
+eosio_create_account accountnum32 1000 1000 2048
+echo "create sample accounts === DONE"
+echo
+echo
 
-ec system newaccount eosio --transfer accountnum11 \
-  EOS74hRF6C4TWnAY1MWJwFdE4NKnoYSazcTBGUEBqqP41aa2BR6Jc \
-  --stake-net "100000.0000 SYS" \
-  --stake-cpu "100000.0000 SYS" --buy-ram-kbytes 32
+ec_genesis system regproducer accountnum11 EOS74hRF6C4TWnAY1MWJwFdE4NKnoYSazcTBGUEBqqP41aa2BR6Jc https://lecle.co.kr
+ec_genesis system regproducer accountnum12 EOS74hRF6C4TWnAY1MWJwFdE4NKnoYSazcTBGUEBqqP41aa2BR6Jc https://lecle.co.kr
 
-ec system newaccount eosio --transfer accountnum12 \
-  EOS74hRF6C4TWnAY1MWJwFdE4NKnoYSazcTBGUEBqqP41aa2BR6Jc \
-  --stake-net "200000.0000 SYS" \
-  --stake-cpu "200000.0000 SYS" --buy-ram-kbytes 32
-
-ec system newaccount eosio --transfer accountnum13 \
-  EOS74hRF6C4TWnAY1MWJwFdE4NKnoYSazcTBGUEBqqP41aa2BR6Jc \
-  --stake-net "300000.0000 SYS" \
-  --stake-cpu "300000.0000 SYS" --buy-ram-kbytes 32
-
-ec system newaccount eosio --transfer accountnum14 \
-  EOS74hRF6C4TWnAY1MWJwFdE4NKnoYSazcTBGUEBqqP41aa2BR6Jc \
-  --stake-net "400000.0000 SYS" \
-  --stake-cpu "400000.0000 SYS" --buy-ram-kbytes 32
-
-ec system newaccount eosio --transfer accountnum15 \
-  EOS74hRF6C4TWnAY1MWJwFdE4NKnoYSazcTBGUEBqqP41aa2BR6Jc \
-  --stake-net "500000.0000 SYS" \
-  --stake-cpu "500000.0000 SYS" --buy-ram-kbytes 32
-
-
-ec system newaccount eosio --transfer accountnum21 \
-  EOS74hRF6C4TWnAY1MWJwFdE4NKnoYSazcTBGUEBqqP41aa2BR6Jc \
-  --stake-net "60000000.0000 SYS" \
-  --stake-cpu "60000000.0000 SYS" --buy-ram-kbytes 32
-
-ec system newaccount eosio --transfer accountnum22 \
-  EOS74hRF6C4TWnAY1MWJwFdE4NKnoYSazcTBGUEBqqP41aa2BR6Jc \
-  --stake-net "70000000.0000 SYS" \
-  --stake-cpu "70000000.0000 SYS" --buy-ram-kbytes 32
-
-ec system newaccount eosio --transfer accountnum23 \
-  EOS74hRF6C4TWnAY1MWJwFdE4NKnoYSazcTBGUEBqqP41aa2BR6Jc \
-  --stake-net "80000000.0000 SYS" \
-  --stake-cpu "80000000.0000 SYS" --buy-ram-kbytes 32
-
-ec system newaccount eosio --transfer accountnum24 \
-  EOS74hRF6C4TWnAY1MWJwFdE4NKnoYSazcTBGUEBqqP41aa2BR6Jc \
-  --stake-net "90000000.0000 SYS" \
-  --stake-cpu "90000000.0000 SYS" --buy-ram-kbytes 32
-
-ec system newaccount eosio --transfer accountnum25 \
-  EOS74hRF6C4TWnAY1MWJwFdE4NKnoYSazcTBGUEBqqP41aa2BR6Jc \
-  --stake-net "100000000.0000 SYS" \
-  --stake-cpu "100000000.0000 SYS" --buy-ram-kbytes 32
-
-sleep 1
-
-ec system newaccount eosio --transfer accountnum31 \
-  EOS74hRF6C4TWnAY1MWJwFdE4NKnoYSazcTBGUEBqqP41aa2BR6Jc \
-  --stake-net "10000.0000 SYS" \
-  --stake-cpu "10000.0000 SYS" --buy-ram-kbytes 4096
-
-
-ec system newaccount eosio --transfer accountnum32 \
-  EOS74hRF6C4TWnAY1MWJwFdE4NKnoYSazcTBGUEBqqP41aa2BR6Jc \
-  --stake-net "1000.0000 SYS" \
-  --stake-cpu "1000.0000 SYS" --buy-ram-kbytes 2048
-
-ec system regproducer accountnum11 EOS74hRF6C4TWnAY1MWJwFdE4NKnoYSazcTBGUEBqqP41aa2BR6Jc https://lecle.co.kr
-ec system regproducer accountnum12 EOS74hRF6C4TWnAY1MWJwFdE4NKnoYSazcTBGUEBqqP41aa2BR6Jc https://lecle.co.kr
-
-sleep 1
-ec system listproducers
-
+ec_genesis system listproducers
 
 ## NODE: producer have to be voted and elected before start
-# sleep 10
-# ec system voteproducer prods accountnum21 accountnum11 accountnum12 -p
-
-sleep 1
-ec system listproducers
+# ec_genesis system voteproducer prods accountnum21 accountnum11 accountnum12 -p

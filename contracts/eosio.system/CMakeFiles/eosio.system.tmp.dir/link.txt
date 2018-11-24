@@ -1,1 +1,0 @@
-/usr/local/bin/clang++   -Wall -Wno-deprecated-declarations -O3 -DNDEBUG -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX10.14.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names  CMakeFiles/eosio.system.tmp.dir/eosio.system.cpp.o  -o eosio.system.tmp 

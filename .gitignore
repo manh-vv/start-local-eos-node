@@ -1,3 +1,4 @@
 node1*
 logs
-keosd.sock
+*.sock
+*.lock
