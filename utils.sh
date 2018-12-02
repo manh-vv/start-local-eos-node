@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
+utils_log_file="./logs/utils.log"
+
+GENESIS_BP_NAME=eosio
+GENESIS_BP_PORT=8880
+GENESIS_BP_PEER=8890
 
 # make log foler 
 if [ ! -d "./logs" ]; then
   echo "make directory [./logs]"
   mkdir ./logs
 fi
-
-utils_log_file="./logs/utils.log"
-# clean log
-echo "" > $utils_log_file
-
 
 function assert_agrs_num {
   ACTUAL=$1
@@ -35,15 +35,18 @@ function start_node {
   R_COMMAND="$R_COMMAND --config-dir ./config"
   R_COMMAND="$R_COMMAND --http-server-address 0.0.0.0:$SERVER_PORT"
   R_COMMAND="$R_COMMAND --p2p-listen-endpoint 0.0.0.0:$PEER_PORT"
+
+  # add extra params
+  R_COMMAND="$R_COMMAND ${@:5:20}"
 }
 
 function ec_genesis {
-  cleos -u http://127.0.0.1:8880 --wallet-url http://127.0.0.1:8889 "$@"
+  cleos -u http://127.0.0.1:$GENESIS_BP_PORT --wallet-url http://127.0.0.1:8889 "$@"
 }
 
 function create_account {
-  CREATOR_NAME=$1
-  ACCOUNT_NAME=$2
+  assert_agrs_num $# 2
+  
   stake_net=100000
   stake_cpu=100000
   buy_ram_kbytes=32
@@ -51,20 +54,53 @@ function create_account {
   if [ ! -z "$3" ]; then stake_net=$3; fi
   if [ ! -z "$4" ]; then stake_cpu=$4; fi
   if [ ! -z "$5" ]; then buy_ram_kbytes=$5; fi
-  
+
+  cmd="ec_genesis system newaccount $1 --transfer $2 EOS74hRF6C4TWnAY1MWJwFdE4NKnoYSazcTBGUEBqqP41aa2BR6Jc"
+  cmd="$cmd --stake-net \"$stake_net.0000 SYS\""
+  cmd="$cmd --stake-cpu \"$stake_cpu.0000 SYS\""
+  cmd="$cmd --buy-ram-kbytes $buy_ram_kbytes"
+  cmd="$cmd 3>&1 1>>$utils_log_file 2>&1"
+
   if [ "$MODE" == "TEST" ]; then
-    echo "create_account $CREATOR_NAME $ACCOUNT_NAME $stake_net $stake_cpu $buy_ram_kbytes"
+    echo $cmd
     return
   fi
 
-  ec_genesis system newaccount $CREATOR_NAME --transfer $ACCOUNT_NAME \
-    EOS74hRF6C4TWnAY1MWJwFdE4NKnoYSazcTBGUEBqqP41aa2BR6Jc \
-    --stake-net "$stake_net.0000 SYS" \
-    --stake-cpu "$stake_cpu.0000 SYS" --buy-ram-kbytes $buy_ram_kbytes
+  eval $cmd
 }
 
 function eosio_create_account {
-  create_account eosio $@ 3>&1 1>>$utils_log_file 2>&1
+  assert_agrs_num $# 1
+
+  create_account eosio $@
+}
+
+function system_register_producer {
+  assert_agrs_num $# 1
+
+  PRODUCER_NAME=$1
+  cmd="ec_genesis system regproducer $PRODUCER_NAME"
+  cmd="$cmd EOS74hRF6C4TWnAY1MWJwFdE4NKnoYSazcTBGUEBqqP41aa2BR6Jc https://lecle.co.kr"
+  if [ "$MODE" == "TEST" ]; then
+    echo "$cmd"
+    return
+  fi
+
+  echo $cmd
+  eval $cmd
+}
+
+function system_vote_producer {
+  assert_agrs_num $# 2
+  cmd="ec_genesis system voteproducer prods $1 ${@:2:17} -p"
+  
+  echo "---- vote producer with command: $cmd"
+  if [ "$MODE" == "TEST" ]; then
+    echo "$cmd"
+    return
+  fi
+  
+  eval $cmd
 }
 
 if [ "$MODE" == "TEST" ]; then
