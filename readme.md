@@ -1,7 +1,7 @@
 # Steps to start test nodeos
 
-I assume eosios was installed correctly on your marchine.
-It means that you can run `nodeos` normaly.
+I assume eosios was installed correctly on your machine.
+It means that you can run `nodeos` normally.
 
 All you need to do is run below commands in sequence:
 
